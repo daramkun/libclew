@@ -4,6 +4,8 @@
 
 #include <Windows.h>
 #include <stdio.h>
+#include <malloc.h>
+#include <VersionHelpers.h>
 
 #if !__cplusplus
 #define nullptr NULL
@@ -66,7 +68,16 @@ clew_cpu_info_t* clew_create()
 
             cpu_info->cores[index].core_index = index;
             cpu_info->cores[index].is_smt_core = !is_physical;
-            cpu_info->cores[index].efficiency_level = (uint8_t)info->Processor.EfficiencyClass;
+#ifdef _MSC_VER
+            if (IsWindows10OrGreater()) {
+                cpu_info->cores[index].efficiency_level = (uint8_t)info->Processor.EfficiencyClass;
+            } else {
+                cpu_info->cores[index].efficiency_level = 0;
+            }
+#else
+            // No support `EfficiencyClass` in MinGW
+            cpu_info->cores[index].efficiency_level = 0;
+#endif
 
             if (cpu_info->maximum_efficiency_level < cpu_info->cores[index].efficiency_level)
                 cpu_info->maximum_efficiency_level = cpu_info->cores[index].efficiency_level;
